@@ -4,7 +4,7 @@ category: Machine Learning\Preprocess
 description: Transform Word to Id
 inputs:
 - name: Input vocab
-  type: Model
+  type: Dataset
   connectable: True
   description: The vocabulary file
 - name: Input text
