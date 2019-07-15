@@ -84,7 +84,7 @@ class Trainer():
                 if self.args.cuda:
                     feature, target = feature.cuda(), target.cuda()
                 optimizer.zero_grad()
-                logit = F.softmax(self.model(feature), dim=1)
+                logit = self.model(feature)
 
                 loss = F.cross_entropy(logit, target)
                 l2_reg = 0.
