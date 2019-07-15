@@ -16,6 +16,7 @@ from sklearn.utils.fixes import signature
 from sklearn.metrics import precision_score, recall_score, f1_score
 from sklearn.metrics import roc_curve
 from sklearn.metrics import auc
+import torch.nn.functional as F
 
 class Predictor():
     def __init__(self, model_folder):
@@ -48,7 +49,7 @@ class Predictor():
                 x = Variable(torch.LongTensor([input_setence]))
                 if torch.cuda.is_available() and self.config.cuda:
                     x = x.cuda()
-                output = self.model(x)
+                output = F.softmax(self.model(x), dim=1)
                 # general classification logic to generate scored label
                 probability, predicted = torch.max(output, 1)
                 output_label.append(predicted.view(1).cpu().numpy()[0])
