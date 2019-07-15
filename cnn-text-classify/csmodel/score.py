@@ -38,6 +38,7 @@ class Predictor():
 
     def predict(self, data_frame):
         output_label = []
+        output_prob = []
         with torch.no_grad():  # ask not to cal
             for index, row in data_frame.iterrows():
                 input_setence = row[
@@ -49,17 +50,19 @@ class Predictor():
                     x = x.cuda()
                 output = self.model(x)
                 # general classification logic to generate scored label
-                _, predicted = torch.max(output, 1)
+                probability, predicted = torch.max(output, 1)
                 output_label.append(predicted.view(1).cpu().numpy()[0])
+                output_prob.append(probability.view(1).cpu().numpy()[0])
             data_frame['Scored Label'] = output_label
+            data_frame['Scored Prob'] = output_prob
         return data_frame
 
-    def evaluation(self, df_true, df_predict, output_eval_dir):
+    def evaluation(self, df_true, df_predict, df_prob, output_eval_dir):
         run = Run.get_context()
 
         # precition-recall-curve
         average_precision = average_precision_score(df_true, df_predict)
-        precision, recall, _ = precision_recall_curve(df_true, df_predict)
+        precision, recall, _ = precision_recall_curve(df_true, df_prob)
         step_kwargs = ({'step': 'post'}
                        if 'step' in signature(plt.fill_between).parameters
                        else {})
@@ -94,8 +97,8 @@ class Predictor():
 
         f3_plt = plt.figure(3)
         # Compute fpr, tpr, thresholds and roc auc
-        fpr, tpr, thresholds = roc_curve(df_true, df_predict)
-        roc_auc = auc(df_true, df_predict)
+        fpr, tpr, thresholds = roc_curve(df_true, df_prob)
+        roc_auc = auc(df_true, df_prob)
 
         plt.plot(fpr, tpr, label='ROC curve (area = %0.3f)' % roc_auc)
         plt.plot([0, 1], [0, 1], 'k--')  # random predictions curve
@@ -120,7 +123,7 @@ if __name__ == '__main__':
 
     headers = df.columns.values.tolist()
     if 'label' in headers:
-        predictor.evaluation(df['label'], out_df['Scored Label'], args.predict_result_path)
+        predictor.evaluation(df['label'], out_df['Scored Label'], out_df['Scored Prob'], args.predict_result_path)
 
 
     # Dump data_type.json as a work around until SMT deploys
